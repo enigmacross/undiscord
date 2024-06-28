@@ -253,6 +253,9 @@
                     <div class="sectionDescription">
                         <label><input id="includePinned" type="checkbox">Include pinned</label>
                     </div>
+                    <div class="sectionDescription">
+                        <label><input id="includeApplications" type="checkbox">Include Applications</label>
+                    </div>
                 </fieldset>
                 <hr>
                 <fieldset>
@@ -449,6 +452,7 @@
 	    includePinned: null, // Delete messages that are pinned
 	    pattern: null, // Only delete messages that match the regex (insensitive)
 	    searchDelay: null, // Delay each time we fetch for more messages
+	    includeApplications: null, //Include application/bot messages
 	    deleteDelay: null, // Delay between each delete operation
 	    maxAttempt: 2, // Attempts to delete a single message if it fails
 	    askForConfirmation: true,
@@ -730,8 +734,13 @@
 	    messagesToDelete = messagesToDelete.filter(msg => msg.type === 0 || (msg.type >= 6 && msg.type <= 21));
 	    messagesToDelete = messagesToDelete.filter(msg => msg.pinned ? this.options.includePinned : true);
 
-	    // custom filter of messages
-	    try {
+	    // if the user hasn't checked the include applications option, filter out all bots
+	    // fixes issues with bots & applications hanging the deletion
+	    if (this.options.includeApplications == false) {
+	      log.verb("Include Applications is false. Skipping bots and applications...");
+	      messagesToDelete = messagesToDelete.filter(msg => !msg.author.bot);
+	    }
+	   try {
 	      const regex = new RegExp(this.options.pattern, 'i');
 	      messagesToDelete = messagesToDelete.filter(msg => regex.test(msg.content));
 	    } catch (e) {
@@ -1455,6 +1464,7 @@ body.undiscord-pick-message.after [id^="message-content-"]:hover::after {
 	  const hasFile = $('input#hasFile').checked;
 	  const includePinned = $('input#includePinned').checked;
 	  const pattern = $('input#pattern').value;
+	  const includeApplications = $('input#includeApplications').checked;
 	  // message interval
 	  const minId = $('input#minId').value.trim();
 	  const maxId = $('input#maxId').value.trim();
@@ -1487,6 +1497,7 @@ body.undiscord-pick-message.after [id^="message-content-"]:hover::after {
 	    content,
 	    hasLink,
 	    hasFile,
+	    includeApplications,
 	    includeNsfw,
 	    includePinned,
 	    pattern,
